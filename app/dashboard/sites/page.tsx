@@ -13,6 +13,9 @@ import {
   Check,
   ExternalLink,
   Key,
+  Shield,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 export default function SitesPage() {
@@ -23,6 +26,7 @@ export default function SitesPage() {
   const [rotatingId, setRotatingId] = useState<string>("");
   const [deletingId, setDeletingId] = useState<string>("");
   const [newKey, setNewKey] = useState<{ siteId: string; key: string } | null>(null);
+  const [expandedProxy, setExpandedProxy] = useState<string>("");
 
   const loadSites = useCallback(async () => {
     try {
@@ -202,6 +206,86 @@ export default function SitesPage() {
                   {getEmbedCode(site.id)}
                 </code>
               </div>
+
+              {/* Proxy setup guide */}
+              <button
+                onClick={() => setExpandedProxy(expandedProxy === site.id ? "" : site.id)}
+                className="mt-3 flex items-center gap-2 text-xs font-medium cursor-pointer transition-colors"
+                style={{ color: "var(--accent)" }}
+              >
+                <Shield className="w-3.5 h-3.5" />
+                Bypass ad blockers (first-party proxy setup)
+                {expandedProxy === site.id ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+
+              {expandedProxy === site.id && (
+                <div className="mt-2 space-y-3 animate-fade-in">
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                    Proxy Traco through your own domain so tracking requests appear first-party.
+                    Ad blockers (Brave, uBlock) can&apos;t block same-origin requests.
+                  </p>
+
+                  {/* Proxied embed code */}
+                  <div className="p-3 rounded-lg" style={{ background: "var(--bg-surface)" }}>
+                    <p className="text-xs font-semibold mb-1" style={{ color: "var(--text-secondary)" }}>
+                      1. Use this embed instead:
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <code className="text-xs font-mono flex-1 break-all" style={{ color: "var(--success)" }}>
+                        {`<script defer src="/traco/script/${site.id}"></script>`}
+                      </code>
+                      <button
+                        onClick={() => copyToClipboard(`<script defer src="/traco/script/${site.id}"></script>`, `proxy-${site.id}`)}
+                        className="p-1.5 rounded cursor-pointer hover:bg-white/10 flex-shrink-0"
+                      >
+                        {copiedId === `proxy-${site.id}` ? (
+                          <Check className="w-3.5 h-3.5" style={{ color: "var(--success)" }} />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" style={{ color: "var(--text-muted)" }} />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Vercel / Next.js */}
+                  <div className="p-3 rounded-lg" style={{ background: "var(--bg-surface)" }}>
+                    <p className="text-xs font-semibold mb-1" style={{ color: "var(--text-secondary)" }}>
+                      2a. Vercel / Next.js — add to next.config.ts:
+                    </p>
+                    <code className="text-xs font-mono break-all block whitespace-pre-wrap" style={{ color: "var(--text-muted)" }}>
+{`async rewrites() {
+  return [{
+    source: "/traco/:path*",
+    destination: "${process.env.NEXT_PUBLIC_API_URL || "https://tracoapi.ankitpatil.tech"}/api/:path*"
+  }];
+}`}
+                    </code>
+                  </div>
+
+                  {/* Nginx */}
+                  <div className="p-3 rounded-lg" style={{ background: "var(--bg-surface)" }}>
+                    <p className="text-xs font-semibold mb-1" style={{ color: "var(--text-secondary)" }}>
+                      2b. Nginx:
+                    </p>
+                    <code className="text-xs font-mono break-all block whitespace-pre-wrap" style={{ color: "var(--text-muted)" }}>
+{`location /traco/ {
+    proxy_pass ${process.env.NEXT_PUBLIC_API_URL || "https://tracoapi.ankitpatil.tech"}/api/;
+    proxy_set_header X-Forwarded-For $remote_addr;
+}`}
+                    </code>
+                  </div>
+
+                  {/* Cloudflare Pages */}
+                  <div className="p-3 rounded-lg" style={{ background: "var(--bg-surface)" }}>
+                    <p className="text-xs font-semibold mb-1" style={{ color: "var(--text-secondary)" }}>
+                      2c. Cloudflare Pages — add to _redirects:
+                    </p>
+                    <code className="text-xs font-mono break-all block" style={{ color: "var(--text-muted)" }}>
+                      {`/traco/* ${process.env.NEXT_PUBLIC_API_URL || "https://tracoapi.ankitpatil.tech"}/api/:splat 200`}
+                    </code>
+                  </div>
+                </div>
+              )}
 
               {/* Rotated key display */}
               {newKey?.siteId === site.id && (
