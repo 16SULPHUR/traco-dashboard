@@ -131,3 +131,34 @@ body {
 .recharts-tooltip-wrapper {
   outline: none !important;
 }
+
+/* ── Recharts Brush custom styling ── */
+.recharts-brush rect.recharts-brush-background {
+  fill: var(--bg-secondary) !important;
+  stroke: var(--border-subtle) !important;
+  rx: 6px;
+  ry: 6px;
+}
+
+.recharts-brush rect.recharts-brush-slide {
+  fill: var(--accent) !important;
+  fill-opacity: 0.15 !important;
+  stroke: var(--accent) !important;
+  stroke-width: 1px !important;
+  rx: 4px;
+  ry: 4px;
+}
+
+.recharts-brush .recharts-brush-traveller rect {
+  fill: var(--border-default) !important;
+  stroke: var(--border-default) !important;
+  width: 6px !important;
+  rx: 3px;
+  ry: 3px;
+}
+
+.recharts-brush .recharts-brush-texts text {
+  fill: var(--text-muted) !important;
+  font-size: 10px !important;
+  font-weight: 500;
+}

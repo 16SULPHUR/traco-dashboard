@@ -126,7 +126,7 @@ export default function SitesPage() {
         <div className="space-y-4">
           {sites.map((site) => {
             return (
-            <div key={site.id} className="card p-5">
+            <div key={site.id} className="card p-4 md:p-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-start gap-4">
                   <div

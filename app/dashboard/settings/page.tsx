@@ -16,7 +16,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Profile */}
-      <div className="card p-6">
+      <div className="card p-4 md:p-6">
         <div className="flex items-center gap-3 mb-4">
           <User className="w-4 h-4" style={{ color: "var(--accent)" }} />
           <h3 className="text-sm font-semibold">Profile</h3>
@@ -56,7 +56,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Plan */}
-      <div className="card p-6">
+      <div className="card p-4 md:p-6">
         <div className="flex items-center gap-3 mb-4">
           <Key className="w-4 h-4" style={{ color: "var(--accent)" }} />
           <h3 className="text-sm font-semibold">Plan</h3>
@@ -83,7 +83,7 @@ export default function SettingsPage() {
       </div>
 
       {/* About */}
-      <div className="card p-6">
+      <div className="card p-4 md:p-6">
         <div className="flex items-center gap-3 mb-4">
           <Settings className="w-4 h-4" style={{ color: "var(--accent)" }} />
           <h3 className="text-sm font-semibold">About Traco</h3>

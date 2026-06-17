@@ -193,3 +193,64 @@ export async function getInsights(token: string, siteId: string) {
     token,
   );
 }
+
+// ── Visitor Log Records ──
+
+export interface LogEntry {
+  id: number;
+  site_id: string;
+  fingerprint: string;
+  path: string;
+  referrer: string;
+  country: string;
+  city: string;
+  region: string;
+  timezone: string;
+  device_type: string;
+  browser: string;
+  os: string;
+  screen_w: number;
+  screen_h: number;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  user_agent: string;
+  ip_address: string;
+  created_at: string;
+}
+
+export interface LogsResponse {
+  success: boolean;
+  logs: LogEntry[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+  };
+}
+
+export async function getLogs(
+  token: string,
+  siteId: string,
+  params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    country?: string;
+    device?: string;
+    path?: string;
+  }
+) {
+  const query = new URLSearchParams();
+  if (params.page) query.set("page", params.page.toString());
+  if (params.limit) query.set("limit", params.limit.toString());
+  if (params.search) query.set("search", params.search);
+  if (params.country) query.set("country", params.country);
+  if (params.device) query.set("device", params.device);
+  if (params.path) query.set("path", params.path);
+
+  return apiFetch<LogsResponse>(
+    `/api/dashboard/${siteId}/logs?${query}`,
+    token,
+  );
+}

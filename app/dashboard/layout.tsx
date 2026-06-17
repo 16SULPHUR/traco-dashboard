@@ -165,9 +165,35 @@ export default function DashboardLayout({
         </div>
       </div>
 
+      {/* Mobile Bottom Nav Bar */}
+      <nav
+        className="md:hidden fixed bottom-0 inset-x-0 z-30 h-16 flex items-center justify-around px-4 border-t glass safe-bottom"
+        style={{
+          borderTopColor: "var(--border-subtle)",
+          paddingBottom: "env(safe-area-inset-bottom)",
+        }}
+      >
+        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+          const active = pathname === href;
+          return (
+            <Link
+              key={href}
+              href={href}
+              className="flex flex-col items-center justify-center flex-1 py-1 text-[10px] font-medium transition-all"
+              style={{
+                color: active ? "var(--accent)" : "var(--text-secondary)",
+              }}
+            >
+              <Icon className="w-5 h-5 mb-1" />
+              {label}
+            </Link>
+          );
+        })}
+      </nav>
+
       {/* Main content */}
-      <main className="flex-1 md:ml-64 pt-14 md:pt-0">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 md:ml-64 pt-14 md:pt-0 pb-16 md:pb-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
           {children}
         </div>
       </main>
