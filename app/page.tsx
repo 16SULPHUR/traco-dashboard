@@ -2,42 +2,66 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/lib/hooks/use-auth";
 import { BarChart3, ArrowRight, Eye, Shield, Sparkles } from "lucide-react";
 
 export default function LoginPage() {
-  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
+  const [otp, setOtp] = useState("");
+  const [step, setStep] = useState<"email" | "otp">("email");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
+  const { login } = useAuth();
 
-  async function handleSubmit(e: React.FormEvent) {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
+
+  async function handleSendOtp(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      if (isSignUp) {
-        const { error: err } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { data: { display_name: name } },
-        });
-        if (err) throw err;
-      } else {
-        const { error: err } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (err) throw err;
+      const res = await fetch(`${API_URL}/api/auth/send-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to send code");
       }
+
+      setStep("otp");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to send verification code");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${API_URL}/api/auth/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Invalid or expired code");
+      }
+
+      login(data.token, data.user);
       router.push("/dashboard");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : "Failed to verify code");
     } finally {
       setLoading(false);
     }
@@ -113,27 +137,39 @@ export default function LoginPage() {
           </div>
 
           <h1 className="text-2xl font-bold mb-2" style={{ color: "var(--text-primary)" }}>
-            {isSignUp ? "Create your account" : "Welcome back"}
+            {step === "email" ? "Sign in or register" : "Verify your email"}
           </h1>
-          <p className="text-sm mb-8" style={{ color: "var(--text-muted)" }}>
-            {isSignUp
-              ? "Start tracking your website visitors for free"
-              : "Sign in to view your analytics dashboard"}
+          <p className="text-sm mb-8 flex flex-wrap items-center gap-1" style={{ color: "var(--text-muted)" }}>
+            {step === "email" ? (
+              "Enter your email to receive a secure, passwordless verification code."
+            ) : (
+              <>
+                Sent to <strong>{email}</strong>
+                <button
+                  onClick={() => { setStep("email"); setError(""); setOtp(""); }}
+                  className="font-semibold cursor-pointer underline text-xs ml-1"
+                  style={{ color: "var(--accent)" }}
+                >
+                  Change email
+                </button>
+              </>
+            )}
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {isSignUp && (
+          <form onSubmit={step === "email" ? handleSendOtp : handleVerifyOtp} className="space-y-4">
+            {step === "email" ? (
               <div>
-                <label htmlFor="name" className="block text-xs font-medium mb-1.5"
+                <label htmlFor="email" className="block text-xs font-medium mb-1.5"
                   style={{ color: "var(--text-secondary)" }}>
-                  Name
+                  Email Address
                 </label>
                 <input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Your name"
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
                   className="w-full h-11 px-4 rounded-xl text-sm outline-none transition-all focus:ring-2"
                   style={{
                     background: "var(--bg-surface)",
@@ -143,52 +179,32 @@ export default function LoginPage() {
                   } as React.CSSProperties}
                 />
               </div>
+            ) : (
+              <div>
+                <label htmlFor="otp" className="block text-xs font-medium mb-1.5"
+                  style={{ color: "var(--text-secondary)" }}>
+                  6-Digit Verification Code
+                </label>
+                <input
+                  id="otp"
+                  type="text"
+                  pattern="\d{6}"
+                  maxLength={6}
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                  placeholder="123456"
+                  required
+                  className="w-full h-11 px-4 rounded-xl text-center text-lg font-bold outline-none transition-all focus:ring-2 font-mono"
+                  style={{
+                    background: "var(--bg-surface)",
+                    border: "1px solid var(--border-subtle)",
+                    color: "var(--text-primary)",
+                    "--tw-ring-color": "var(--accent)",
+                    letterSpacing: "8px",
+                  } as React.CSSProperties}
+                />
+              </div>
             )}
-
-            <div>
-              <label htmlFor="email" className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-secondary)" }}>
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                required
-                className="w-full h-11 px-4 rounded-xl text-sm outline-none transition-all focus:ring-2"
-                style={{
-                  background: "var(--bg-surface)",
-                  border: "1px solid var(--border-subtle)",
-                  color: "var(--text-primary)",
-                  "--tw-ring-color": "var(--accent)",
-                } as React.CSSProperties}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-xs font-medium mb-1.5"
-                style={{ color: "var(--text-secondary)" }}>
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                minLength={6}
-                className="w-full h-11 px-4 rounded-xl text-sm outline-none transition-all focus:ring-2"
-                style={{
-                  background: "var(--bg-surface)",
-                  border: "1px solid var(--border-subtle)",
-                  color: "var(--text-primary)",
-                  "--tw-ring-color": "var(--accent)",
-                } as React.CSSProperties}
-              />
-            </div>
 
             {error && (
               <div className="p-3 rounded-lg text-sm" style={{ background: "var(--danger-muted)", color: "var(--danger)" }}>
@@ -206,23 +222,12 @@ export default function LoginPage() {
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  {isSignUp ? "Create Account" : "Sign In"}
+                  {step === "email" ? "Send Verification Code" : "Verify & Sign In"}
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
-
-          <p className="mt-6 text-center text-sm" style={{ color: "var(--text-muted)" }}>
-            {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
-            <button
-              onClick={() => { setIsSignUp(!isSignUp); setError(""); }}
-              className="font-medium cursor-pointer hover:underline"
-              style={{ color: "var(--accent)" }}
-            >
-              {isSignUp ? "Sign in" : "Sign up"}
-            </button>
-          </p>
         </div>
       </div>
     </div>
