@@ -155,23 +155,32 @@ export default function DashboardPage() {
   const [insight, setInsight] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [insightLoading, setInsightLoading] = useState(false);
+  const [error, setError] = useState<string>("");
 
   const loadSites = useCallback(async () => {
+    setError("");
     try {
       const token = await getToken();
       const { sites: s } = await api.listSites(token);
       setSites(s);
-      if (s.length > 0 && !activeSiteId) {
-        setActiveSiteId(s[0]!.id);
+      if (s.length > 0) {
+        if (!activeSiteId) {
+          setActiveSiteId(s[0]!.id);
+        }
+      } else {
+        setLoading(false);
       }
     } catch (e) {
       console.error("Failed to load sites:", e);
+      setError("Failed to load sites. Please ensure the backend server is running and reachable.");
+      setLoading(false);
     }
   }, [getToken, activeSiteId]);
 
   const loadDashboard = useCallback(async () => {
     if (!activeSiteId) return;
     setLoading(true);
+    setError("");
     try {
       const token = await getToken();
       const [ov, ts, pg, ref, geo, dev, lv] = await Promise.all([
@@ -192,6 +201,7 @@ export default function DashboardPage() {
       setLive(lv.live);
     } catch (e) {
       console.error("Dashboard load failed:", e);
+      setError("Failed to load dashboard data. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -200,12 +210,14 @@ export default function DashboardPage() {
   const loadInsight = useCallback(async () => {
     if (!activeSiteId) return;
     setInsightLoading(true);
+    setError("");
     try {
       const token = await getToken();
       const { insight: i } = await api.getInsights(token, activeSiteId);
       setInsight(i);
     } catch (e) {
       console.error("Insight load failed:", e);
+      setError("Insight load failed. Please try again later.");
     } finally {
       setInsightLoading(false);
     }
@@ -284,6 +296,12 @@ export default function DashboardPage() {
           </select>
         )}
       </div>
+
+      {error && (
+        <div className="p-4 rounded-xl text-sm animate-fade-in" style={{ background: "var(--danger-muted)", color: "var(--danger)" }}>
+          {error}
+        </div>
+      )}
 
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
